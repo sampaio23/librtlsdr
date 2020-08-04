@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/timeb.h>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -120,6 +121,9 @@ int main(int argc, char **argv)
 	uint32_t frequency = 100000000;
 	uint32_t samp_rate = DEFAULT_SAMPLE_RATE;
 	uint32_t out_block_size = DEFAULT_BUF_LENGTH;
+
+    struct timeval timer_usec; 
+    long long int timestamp_usec; /* timestamp in microsecond */
 
 	while ((opt = getopt(argc, argv, "d:f:g:s:b:n:p:S")) != -1) {
 		switch (opt) {
@@ -259,6 +263,12 @@ int main(int argc, char **argv)
 		}
 	} else {
 		fprintf(stderr, "Reading samples in async mode...\n");
+
+        if (!gettimeofday(&timer_usec, NULL)) {
+            timestamp_usec = ((long long int) timer_usec.tv_sec) * 1000000ll + 
+                      (long long int) timer_usec.tv_usec;
+        } 
+
 		r = rtlsdr_read_async(dev, rtlsdr_callback, (void *)file,
 				      0, out_block_size);
 	}
@@ -271,6 +281,7 @@ int main(int argc, char **argv)
 	if (file != stdout)
 		fclose(file);
 
+    printf("%lld microseconds since epoch\n", timestamp_usec);
 	rtlsdr_close(dev);
 	free (buffer);
 out:
